@@ -16,8 +16,10 @@
 package com.wrbug.developerhelper.base
 
 import android.Manifest
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -26,6 +28,7 @@ import androidx.annotation.IdRes
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
 import com.wrbug.developerhelper.R
@@ -38,7 +41,11 @@ import com.wrbug.developerhelper.base.activityresultcallback.ActivityResultCallb
 
 
 fun AppCompatActivity.setupActionBar(@IdRes toolbarId: Int, action: ActionBar.() -> Unit = {}) {
-    setSupportActionBar(findViewById(toolbarId))
+    setupActionBar(findViewById(toolbarId), action)
+}
+
+fun AppCompatActivity.setupActionBar(toolbar: Toolbar, action: ActionBar.() -> Unit = {}) {
+    setSupportActionBar(toolbar)
     supportActionBar?.run {
         setDisplayHomeAsUpEnabled(false)
         action()
@@ -107,5 +114,17 @@ fun Context.requestStoragePermission(callback: () -> Unit) {
                 }
             })
         }
+    }
+}
+
+fun Context.registerReceiverComp(
+    broadcastReceiver: BroadcastReceiver,
+    intentFilter: IntentFilter,
+    flags: Int = AppCompatActivity.RECEIVER_NOT_EXPORTED
+) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        registerReceiver(broadcastReceiver, intentFilter, flags)
+    } else {
+        registerReceiver(broadcastReceiver, intentFilter)
     }
 }

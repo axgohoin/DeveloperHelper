@@ -1,8 +1,6 @@
 package com.wrbug.developerhelper.commonutil.shell
 
-import com.jaredrummler.ktsh.Shell
 import com.wrbug.developerhelper.commonutil.Constant
-import com.wrbug.developerhelper.commonutil.ShellUtils
 import com.wrbug.developerhelper.commonutil.entity.LsFileInfo
 import com.wrbug.developerhelper.commonutil.entity.TopActivityInfo
 import com.wrbug.developerhelper.commonutil.runOnIO
@@ -31,7 +29,7 @@ object ShellManager {
         arrayOf("setprop service.adb.tcp.port 5555", "stop adbd", "start adbd")
 
     fun getTopActivity(): Single<TopActivityInfo> {
-        return ShellUtils.runWithSuAsync(SHELL_TOP_ACTIVITY).map {
+        return ShellUtils.runWithSuAsync(SHELL_TOP_ACTIVITY, useBusyBox = false).map {
             getTopActivity(it)
         }.runOnIO()
     }
@@ -40,8 +38,8 @@ object ShellManager {
         return (str.length - str.trimStart().length) / 2
     }
 
-    private fun getTopActivity(result: Shell.Command.Result): TopActivityInfo {
-        val stdout = result.stdout()
+    private fun getTopActivity(result: CommandResult): TopActivityInfo {
+        val stdout = result.getStdout()
         val topActivityInfo = TopActivityInfo()
         val task_s = stdout.split("TASK ")
         for (task_ in task_s) {
@@ -76,11 +74,11 @@ object ShellManager {
     }
 
     fun lsFile(file: String): LsFileInfo? {
-        val result: Shell.Command.Result = ShellUtils.runWithSu(String.format(SHELL_LS_FILE, file))
-        if (result.isSuccess.not()) {
+        val result: CommandResult = ShellUtils.runWithSu(String.format(SHELL_LS_FILE, file))
+        if (result.isSuccessful.not()) {
             return null
         }
-        val split = result.stdout().split(" ")
+        val split = result.getStdout().split(" ")
         if (split.size <= 4) {
             return null
         }
@@ -92,19 +90,28 @@ object ShellManager {
     }
 
     fun getPid(packageName: String): String {
-        var result: Shell.Command.Result =
-            ShellUtils.runWithSu(String.format(SHELL_PROCESS_PID_1, packageName))
-        if (result.isSuccess) {
-            return result.stdout()
+        var result: CommandResult =
+            ShellUtils.runWithSu(
+                String.format(SHELL_PROCESS_PID_1, packageName),
+                useBusyBox = false
+            )
+        if (result.isSuccessful) {
+            return result.getStdout()
         }
-        result = ShellUtils.runWithSu(String.format(SHELL_PROCESS_PID_2, packageName))
-        if (result.isSuccess.not()) {
-            result = ShellUtils.runWithSu(String.format(SHELL_PROCESS_PID_3, packageName))
+        result = ShellUtils.runWithSu(
+            String.format(SHELL_PROCESS_PID_2, packageName),
+            useBusyBox = false
+        )
+        if (result.isSuccessful.not()) {
+            result = ShellUtils.runWithSu(
+                String.format(SHELL_PROCESS_PID_3, packageName),
+                useBusyBox = false
+            )
         }
-        if (result.isSuccess.not()) {
+        if (result.isSuccessful.not()) {
             return ""
         }
-        return result.stdout().trim().split(" ")[0]
+        return result.getStdout().trim().split(" ")[0]
     }
 
     fun getSqliteFiles(packageName: String): Array<File> {
@@ -119,7 +126,7 @@ object ShellManager {
             file?.run {
                 val cmd = String.format(SHELL_CHECK_IS_SQLITE, "$dbPath/$file")
                 val result = ShellUtils.runWithSu(cmd)
-                if (result.isSuccess && result.stdout().isNullOrEmpty().not()) {
+                if (result.isSuccessful && result.getStdout().isNullOrEmpty().not()) {
                     files.add(File(dbPath, file))
 
                 }
@@ -129,45 +136,46 @@ object ShellManager {
     }
 
     fun openAccessibilityService(): Single<Boolean> {
-        return ShellUtils.runWithSuAsync(SHELL_OPEN_ACCESSiBILITY_SERVICE).map {
-            it.isSuccess && it.stdout().isEmpty()
-        }.onErrorReturn { false }.runOnIO()
+        return ShellUtils.runWithSuAsync(*SHELL_OPEN_ACCESSiBILITY_SERVICE, useBusyBox = false)
+            .map {
+                it.isSuccessful && it.getStdout().isEmpty()
+            }.onErrorReturn { false }.runOnIO()
     }
 
     fun catFile(filaPath: String): String {
         val result = ShellUtils.runWithSu("cat $filaPath")
-        return result.stdout()
+        return result.getStdout()
     }
 
     fun rmFile(file: String): Boolean {
         val result = ShellUtils.runWithSu("rm -rf $file")
-        return result.isSuccess
+        return result.isSuccessful
     }
 
     fun modifyFile(filaPath: String, content: String): Boolean {
         val result = ShellUtils.runWithSu("echo $content >> $filaPath")
-        return result.isSuccess
+        return result.isSuccessful
     }
 
     fun cpFile(source: String, dst: String, mod: String = "666"): Boolean {
         val dir = dst.substring(0, dst.lastIndexOf("/"))
         var result = ShellUtils.runWithSu("mkdir -p $dir")
-        if (result.isSuccess.not()) {
+        if (result.isSuccessful.not()) {
             return false
         }
         result = ShellUtils.runWithSu("cp -R $source $dst && chmod $mod $dst")
-        return result.isSuccess || result.stderr()
+        return result.isSuccessful || result.getStderr()
             .contains("Operation not permitted")
     }
 
     fun tarCF(tarPath: String, srcPath: String): Boolean {
         val dir = tarPath.substring(0, tarPath.lastIndexOf("/"))
         var result = ShellUtils.runWithSu("mkdir -p $dir")
-        if (result.isSuccess.not()) {
+        if (result.isSuccessful.not()) {
             return false
         }
         result = ShellUtils.runWithSu("tar -pcf  $tarPath -C $srcPath .")
-        return result.isSuccess || result.stderr()
+        return result.isSuccessful || result.getStderr()
             .contains("Operation not permitted")
     }
 
@@ -179,7 +187,7 @@ object ShellManager {
             cmds.add("chmod $mod $dst")
         }
         val result = ShellUtils.runWithSu(*(cmds.toTypedArray()))
-        return result.isSuccess
+        return result.isSuccessful
     }
 
 
@@ -188,29 +196,24 @@ object ShellManager {
         return result.stdout
     }
 
-    fun findApkDir(packageName: String): String {
-        val cmd = "ls /data/app/|grep $packageName"
-        val dir = ShellUtils.runWithSu(cmd).stdout()
-        return "/data/app/$dir/base.apk"
-    }
-
-    fun uninstallApp(packageName: String): Boolean {
-        val result = ShellUtils.runWithSu(String.format(SHELL_UNINSTALL_APP, packageName))
-        return result.isSuccess
-    }
-
     fun clearAppData(packageName: String): Boolean {
-        val result = ShellUtils.runWithSu(String.format(SHELL_CLEAR_APP_DATA, packageName))
-        return result.isSuccess
+        val result = ShellUtils.runWithSu(
+            String.format(SHELL_CLEAR_APP_DATA, packageName),
+            useBusyBox = false
+        )
+        return result.isSuccessful
     }
 
     fun forceStopApp(packageName: String): Boolean {
-        val result = ShellUtils.runWithSu(String.format(SHELL_FORCE_STOP_APP, packageName))
-        return result.isSuccess
+        val result = ShellUtils.runWithSu(
+            String.format(SHELL_FORCE_STOP_APP, packageName),
+            useBusyBox = false
+        )
+        return result.isSuccessful
     }
 
     fun openAdbWifi(): Boolean {
-        val result = ShellUtils.runWithSu(*SHELL_OPEN_ADB_WIFI)
-        return result.isSuccess
+//        val result = ShellUtils.runWithSu(*SHELL_OPEN_ADB_WIFI)
+        return false
     }
 }

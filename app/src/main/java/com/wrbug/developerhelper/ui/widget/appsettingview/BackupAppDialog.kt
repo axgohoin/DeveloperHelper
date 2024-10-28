@@ -85,6 +85,7 @@ class BackupAppDialog : BottomSheetDialogFragment() {
         if (hasError) {
             binding.tvNotice.isVisible = false
             binding.btnExit.isVisible = true
+            binding.zipFileProgress.setStatus(BackupProgressView.Status.Canceled)
             return
         }
         if (successCount < 3) {
@@ -101,6 +102,7 @@ class BackupAppDialog : BottomSheetDialogFragment() {
                 ?: throw Exception()
         }.map {
             val info = BackupAppItemInfo(
+                it.second.name,
                 backupApk,
                 backupData,
                 backupAndroidData,
@@ -233,7 +235,7 @@ class BackupAppDialog : BottomSheetDialogFragment() {
             successCount++
             binding.androidDataProgress.setStatus(
                 BackupProgressView.Status.Success,
-                it.absolutePath
+                it.ifEmpty { getString(R.string.no_need_to_backup) }
             )
         }, {
             hasError = true
@@ -263,6 +265,6 @@ class BackupAppDialog : BottomSheetDialogFragment() {
     private fun runOnIo() = if (apkInfo == null) {
         Single.error(Exception())
     } else {
-        Single.just(apkInfo!!).subscribeOn(Schedulers.io())
+        Single.just(apkInfo!!).subscribeOn(Schedulers.newThread())
     }
 }
