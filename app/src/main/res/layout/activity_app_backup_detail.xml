@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:background="@color/colorPrimary"
+    tools:context=".ui.activity.appbackup.BackupAppActivity">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <com.wrbug.developerhelper.ui.widget.appbar.AppBar
+            android:id="@+id/app_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:showBack="true"
+            app:title="@string/backup_manager" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <com.yanzhenjie.recyclerview.SwipeRecyclerView
+        android:id="@+id/rv_app_backup_list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        tools:listitem="@layout/item_backup_detail_info" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

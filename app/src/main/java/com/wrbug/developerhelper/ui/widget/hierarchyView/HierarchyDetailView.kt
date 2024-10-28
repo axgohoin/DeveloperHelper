@@ -6,15 +6,16 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.util.AttributeSet
 import android.widget.FrameLayout
-import com.wrbug.developerhelper.basecommon.entry.HierarchyNode
+import com.wrbug.developerhelper.base.entry.HierarchyNode
 import com.wrbug.developerhelper.R
 import com.wrbug.developerhelper.ui.widget.helper.CanvasHelper
 import com.wrbug.developerhelper.commonutil.UiUtils
 
 class HierarchyDetailView : FrameLayout {
+
     private val paint: Paint by lazy {
         val paint = Paint()
-        paint.color = context.resources.getColor(R.color.colorAccent)
+        paint.color = context.resources.getColor(R.color.material_color_blue_800)
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = 3F
         paint
@@ -34,7 +35,6 @@ class HierarchyDetailView : FrameLayout {
         initView()
     }
 
-
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
         initView()
     }
@@ -50,14 +50,13 @@ class HierarchyDetailView : FrameLayout {
         setWillNotDraw(false)
     }
 
-
-    override fun onDraw(canvas: Canvas?) {
+    override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         if (hierarchyNode != null) {
-            drawNode(canvas)
             if (hierarchyNode?.parentId!! > -1) {
                 drawParentNode(canvas)
             }
+            drawNode(canvas)
         }
     }
 
@@ -65,7 +64,7 @@ class HierarchyDetailView : FrameLayout {
         if (parentHierarchyNode == null) {
             return
         }
-        val bounds = parentHierarchyNode?.screenBounds
+        val bounds = parentHierarchyNode?.screenBounds ?: return
         canvas?.drawRect(bounds, parentpPaint)
 
     }

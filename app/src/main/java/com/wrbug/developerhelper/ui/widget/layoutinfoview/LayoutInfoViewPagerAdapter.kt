@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager.widget.PagerAdapter
 import androidx.viewpager.widget.ViewPager
 import com.wrbug.developerhelper.R
-import com.wrbug.developerhelper.basecommon.entry.HierarchyNode
+import com.wrbug.developerhelper.base.entry.HierarchyNode
 import com.wrbug.developerhelper.ui.widget.boundsinfoview.BoundsInfoView
 import com.wrbug.developerhelper.ui.widget.layoutinfoview.infopage.InfoAdapter
 import com.wrbug.developerhelper.ui.widget.layoutinfoview.infopage.ItemInfo
@@ -30,7 +30,7 @@ class LayoutInfoViewPagerAdapter(
     private val infoAdapter: InfoAdapter = InfoAdapter(context)
     private lateinit var graphView: GraphView
     private val boundsInfoView = BoundsInfoView(context)
-    private var onNodeChangedListener: OnNodeChangedListener? = null
+    private var onNodeChangedListener: ((HierarchyNode, HierarchyNode?) -> Unit)? = null
 
     init {
         initInfoTab()
@@ -38,14 +38,14 @@ class LayoutInfoViewPagerAdapter(
         initViewTreeTab()
     }
 
-    fun setOnNodeChangedListener(listener: OnNodeChangedListener) {
+    fun setOnNodeChangedListener(listener: (HierarchyNode, HierarchyNode?) -> Unit) {
         onNodeChangedListener = listener
     }
 
     private fun initViewTreeTab() {
         tabList.add("ViewTree")
         graphView =
-                LayoutInflater.from(context).inflate(R.layout.layout_hierarchy_tree, null) as GraphView
+            LayoutInflater.from(context).inflate(R.layout.layout_hierarchy_tree, null) as GraphView
         val adapter = ViewTreeGraphAdapter(context, R.layout.item_tree_node_view)
         graphView.adapter = adapter
         adapter.setOnItemClickListener(object : ViewTreeGraphAdapter.OnItemClickListener {
@@ -54,7 +54,7 @@ class LayoutInfoViewPagerAdapter(
                 resetInfoTab()
                 resetLayoutTable()
                 resetViewTreeTab(node)
-                onNodeChangedListener?.onChanged(node.node, node.parent?.node)
+                onNodeChangedListener?.invoke(node.node, node.parent?.node)
             }
         })
         val configuration = BuchheimWalkerConfiguration.Builder()
@@ -150,7 +150,7 @@ class LayoutInfoViewPagerAdapter(
                 "${resourceId.replace(packageName, "app")}[${idHex?.replace("#", "0x") ?: "NO_ID"}]"
             )
         )
-        if (!text.isEmpty()) {
+        if (text.isNotEmpty()) {
             list.add(ItemInfo("Text", text))
         }
         list.add(ItemInfo("Enable", enabled))
